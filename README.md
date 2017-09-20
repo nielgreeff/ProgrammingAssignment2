@@ -103,3 +103,12 @@ In order to complete this assignment, you must do the following:
 ### Grading
 
 This assignment will be graded via peer assessment.
+
+### How to run this program
+1. Get a matrix that has an inverse .. suggestion: 
+	p <- matrix(c(2,4,6,7),2,2)
+2. Setup the cache matrix for this matrix .. suggestion :
+	my_cache <- makeCacheMaqtrix(p)
+3. Now inverse matrix p with our cache matrix .. suggestion :
+	cacheSolve(my_cache,p)
+

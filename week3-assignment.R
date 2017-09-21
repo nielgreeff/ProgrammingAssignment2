@@ -13,12 +13,24 @@ makeCacheMatrix <- function (x = matrix()) {
 }
 
 cacheSolve <- function (x,p) {
+  
+  my_inv <- x$getinv()
+  # check if we have the inverse in cache already .. if not .. then calculate it
+  if (!is.null(my_inv)) {
+    
+    message("getting from cache")
+    return(my_inv)
+  }
+  
+  # we got here ... no cache
   # setup the cache
   x$set(p)
-  
+    
   # calculate the inverse
   x$setinv()
   
   # display the inverse
-  x$getinv()
+  my_inv <- x$getinv()
+  my_inv
+  
 }

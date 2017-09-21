@@ -112,3 +112,10 @@ This assignment will be graded via peer assessment.
 3. Now inverse matrix p with our cache matrix .. suggestion :
 	cacheSolve(my_cache,p)
 
+
+### Damn -- Extra note
+The version will not work that I handed it ... will work, but never checks
+if the cache is there already and use it ...
+
+Uploaded it just for myself .... 
+

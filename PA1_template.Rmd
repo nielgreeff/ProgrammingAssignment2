@@ -1,0 +1,122 @@
+---
+title: "Reproducible Research - Week 2"
+author: "Niel Greeff"
+date: "17 November 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###About
+This knitr project will read specified data, then answer some questions.
+
+## Loading and preprocessing the data
+```{r}
+ filename <- "activity_data.zip"
+  
+  ## Download and unzip the dataset:
+  if (!file.exists(filename)){
+    getfileURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+    download.file(getfileURL, filename)
+  }  
+  if (!file.exists("activity.csv")) { 
+    unzip(filename) 
+  }
+
+data <- read.csv("activity.csv")
+
+  
+```
+## What is mean total number of steps taken per day?
+Aggregate steps per day (date), and plot a histogram of total steps per day and report the mean and median 
+```{r}
+per_day <- aggregate(steps ~ date, data, sum)
+
+hist(per_day$steps, main = paste("Total Steps Each Day"), col="green", xlab="Number of Steps")
+rmean <- mean(per_day$steps)
+rmedian <- median(per_day$steps)
+```
+
+The `mean` is `r rmean` and the `median` is `r rmedian`.
+
+
+## What is the average daily activity pattern?
+* Calculate average steps for each interval for all days. 
+* Plot the Average Number Steps per Day per Interval. 
+* Find interval with most average steps. 
+
+```{r}
+steps_per_interval <- aggregate(steps ~ interval, data, mean)
+
+plot(steps_per_interval$interval,steps_per_interval$steps, type="l", xlab="Interval", ylab="Number of Steps",main="Average Number of Steps per Day per Interval")
+
+max_interval <- steps_per_interval[which.max(steps_per_interval$steps),1]
+```
+
+The 5-minute interval, on average across all the days, containing the maximum number of steps is `r max_interval`.
+
+
+## Imputing missing values
+We need to replace missing values (NA) in the data.
+This is done by calculating the average of the interval and replacing
+the missing values with the average for all days.
+
+```{r}
+incomplete <- sum(!complete.cases(data))
+imputed_data <- transform(data, steps = ifelse(is.na(data$steps), steps_per_interval$steps[match(data$interval, steps_per_interval$interval)], data$steps))
+```
+
+Taking special care of 10-01-2012 because it was the first day and would have been over 9,000 steps higher than the following day if we used the averages (next day only has 126 steps). 
+
+The average (and total number of steps) are increasing over the whole period, so starting with zero makes sense
+```{r}
+imputed_data[as.character(imputed_data$date) == "2012-10-01", 1] <- 0
+```
+
+## Re-calculate Histogram and mean and median 
+```{r}
+new_steps_per_day <- aggregate(steps ~ date, imputed_data, sum)
+hist(new_steps_per_day$steps, main = paste("Total Steps Each Day"), col="blue", xlab="Number of Steps")
+
+#Create Histogram to show difference. 
+hist(per_day$steps, main = paste("Total Steps Each Day"), col="red", xlab="Number of Steps",add=T)
+legend("topright", c("Imputed", "Non-imputed"), col=c("blue", "red"), lwd=10)
+```
+
+Calculate new mean and median for imputed data. 
+```{r}
+new_rmean <- mean(new_steps_per_day$steps)
+new_rmedian <- median(new_steps_per_day$steps)
+
+# and also calculate the differences between total steps (corrected and not)
+# and means and medians
+total_diff <- sum(new_steps_per_day$steps) - sum(per_day$steps)
+mean_diff <- new_rmean - rmean
+med_diff <- new_rmedian - rmedian
+
+```
+
+#### Differences between imputed and old data
+* The imputed data mean is `r new_rmean`
+* The imputed data median is `r new_rmedian`
+* The difference between the non-imputed mean and imputed mean is `r mean_diff`
+* The difference between the non-imputed mean and imputed mean is `r med_diff`
+* The difference between total number of steps between imputed and non-imputed data is `r total_diff`.  Thus, there were `r total_diff` more steps in the imputed data.
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+Also create a plot to show the difference
+``` {r}
+weekdays <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+imputed_data$dow = as.factor(ifelse(is.element(weekdays(as.Date(imputed_data$date)),weekdays),"Weekday", "Weekend"))
+
+new_steps_per_interval <- aggregate(steps ~ interval + dow, imputed_data, mean)
+
+# make sure we can plot by including the lattice library
+library(lattice)
+
+xyplot(new_steps_per_interval$steps ~ new_steps_per_interval$interval|new_steps_per_interval$dow, main="Average Steps per Day per Interval",xlab="Interval", ylab="Steps",layout=c(1,2), type="l")
+
+```
